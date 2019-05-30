@@ -1,0 +1,28 @@
+<!-- - *************************************************************************
+*  @Nodelet |NAME_CAPITALIZE|
+*  @Header |NODELET_HEADER|
+*  @Source |NODELET_SOURCE|
+*  @Date   |DATE|
+*  @Author  M. Treglia
+*
+*************************************************************************<!- -->
+
+
+<launch>
+
+    <!-- |NAME_CAPITALIZE| -->
+    <node pkg="nodelet" type="nodelet"
+          args="load MarkNodelet/|NAME_CAPITALIZE| $(arg manager)"
+          name="|NAME_CAPITALIZE|"
+          output="screen"
+          respawn="true">
+
+        <!-- Dynamic Ros param-->
+        <!-- param name="benchmark" type = "bool" value ="true"/-->
+
+        <!-- Static Ros param-->
+        <rosparam>
+        </rosparam>
+    </node>
+
+</launch>

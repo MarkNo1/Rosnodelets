@@ -1,0 +1,40 @@
+/*!****************************************************************************
+ *  @file   |NAME_CAPITALIZE|.cc
+ *  @date   |DATE|
+ *  @author M. Treglia
+ *  @brief  Definition |NAME_CAPITALIZE| nodelet
+ *****************************************************************************/
+
+#include <|PACKAGE|/nodelets/|NAME_CAPITALIZE|.h>
+
+namespace rosnodelets {
+
+    void |NAME_CAPITALIZE|::InitializeNodeletName() {SetName("|NAME_CAPITALIZE|");}
+
+    void |NAME_CAPITALIZE|::InitializeNodelet() {
+        LogInfo("Initialized");
+    }
+
+    void |NAME_CAPITALIZE|::LoadRosParameters() {
+      getPrivateNodeHandle().param<std::string>("topic_in", topic_in_, "/topic");
+      getPrivateNodeHandle().param<std::string>("topic_out", topic_out_, "/topic");
+      LogInfo("topic_in: " + topic_in_);
+      LogInfo("topic_out: " + topic_out_);
+    }
+
+    void |NAME_CAPITALIZE|::EstablishRosCommunication() {
+        sub = getMTNodeHandle().subscribe(topic_in_, 100, &|NAME_CAPITALIZE|::CallbackBM, this, ros::TransportHints().tcpNoDelay());
+        pub = getMTNodeHandle().advertise<msgs::MSG>(topic_out_, 100);
+    }
+
+    inline void |NAME_CAPITALIZE|::CallbackBM(const msgs::MSG::ConstPtr &message) {
+     Start();
+     Callback(message);
+     End();
+    }
+
+    inline void |NAME_CAPITALIZE|::Callback(const msgs::MSG::ConstPtr &message) {
+
+    }
+
+}  // namespace rosnodelets

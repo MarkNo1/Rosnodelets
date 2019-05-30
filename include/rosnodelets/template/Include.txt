@@ -1,0 +1,83 @@
+/*!****************************************************************************
+ *  @file 	 |NAME_CAPITALIZE|.h
+ *  @date 	 |DATE|
+ *  @author  M. Treglia
+ *  @brief
+ *****************************************************************************/
+
+#ifndef ROSNODELETS_|NAME_UPPER|_
+#define ROSNODELETS_|NAME_UPPER|_
+
+#include <ros/ros.h>
+// Declare a Ros Nodelet
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
+// Base Template Class for nodelets
+#include <rosnodelets/template/BaseNodelet.h>
+
+/**
+ *  |NAME_CAPITALIZE| namespace
+ */
+namespace rosnodelets {
+
+/**
+ *  Naming simplification
+ */
+//using :
+
+/**
+ * @class |NAME_CAPITALIZE|
+ * @brief
+ */
+class |NAME_CAPITALIZE| : public base::NodeletBM {
+ public:
+  using base::NodeletBM::Nodelet;
+
+    /**
+     * Initialization nodelet name
+     */
+    void InitializeNodeletName() final;
+
+  /**
+   * Initialization all components
+   */
+  void InitializeNodelet() final;
+
+  /**
+   * Loading ros parameters
+   */
+  void LoadRosParameters() final;
+
+  /**
+   * Establish ros communications
+   */
+  void EstablishRosCommunication() final;
+
+  /**
+   *  Callback to velodyne packets
+   */
+  inline void Callback(const msgs::MSG::ConstPtr &message);
+
+  /**
+   *  Callback to benchmark the nodelet
+   */
+  inline void CallbackBM(const msgs::MSG::ConstPtr &message);
+
+ private:
+  ros::Subscriber sub;
+  ros::Publisher  pub;
+
+  // In - Out
+  std::string topic_in_;
+  std::string topic_out_;
+
+};
+
+}  // namespace rosnodelets
+
+/**
+ * Register the nodelet.
+ */
+PLUGINLIB_EXPORT_CLASS(rosnodelets::|NAME_CAPITALIZE|, nodelet::Nodelet);
+
+#endif  // ROSNODELETS_|NAME_UPPER|_

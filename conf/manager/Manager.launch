@@ -1,0 +1,56 @@
+<!-- - *************************************************************************
+*  @Node Manager
+*  @Header ros
+*  @Source ros
+*  @Date 	 2019.02.13
+*  @Author  M. Treglia Akka
+*
+*   Control behavior of children nodelets.
+*
+*************************************************************************<!- -->
+
+<launch>
+
+    <!-- - - - - - - - - - - - - -
+              Parameters
+    - - - - - - - - - - - - - -->
+    <!--    Nodelet manager name    -->
+    <arg name="manager_name" default="PerceptionManager"/>
+    <!--    Output screen    -->
+    <arg name="output" default="screen"/>
+    <!--    Debug     -->
+    <arg name="debug_gdp"  default="false"/>
+    <arg name="debug_perf" default="false"/>
+    <arg name="launch_prefix" default=""/>
+    <!--  Manager Threads  -->
+    <arg name="threads" default="8" />
+
+
+    <!-- - - - - - - - - - - - - -
+         Debug & Perf Analysis
+    - - - - - - - - - - - - - -->
+
+    <!-- GDB  -->
+    <group if="$(arg debug_gdp)">
+        <arg name="launch_prefix" default="xterm -e gdb --args"/>
+    </group>
+
+    <!-- PERF -->
+    <group if="$(arg debug_perf)">
+        <arg name="perf_file" default="perf.data.out.PerceptionManager.01.perf"/>
+        <arg name="launch_prefix" default="perf record -g --call-graph dwarf --output=$(arg perf_file) --"/>
+    </group>
+
+    <!-- - - - - - - - - - - - - -
+              Nodelet Manager
+    - - - - - - - - - - - - - -->
+    <node pkg="rosnodelets" type="nodelet_manager"
+          name="$(arg manager_name)"
+          respawn="true"
+          output="$(arg output)"
+          launch-prefix="$(arg launch_prefix)">
+        <param name="num_worker_threads" value="$(arg threads)" />
+    </node>
+
+
+</launch>

@@ -1,0 +1,170 @@
+#! /usr/bin/env python
+from __future__ import print_function
+import roslib;roslib.load_manifest('rosnodelets')
+import rospy
+import argparse
+import rospkg
+import os
+import datetime
+import errno
+
+# Setting dry run
+DRY_RUN=True
+
+# Create folder
+def folder(dir):
+    try :
+        os.makedirs(dir)
+    except OSError as e:
+        pass
+
+
+
+# Write to file
+def to_file(text, file):
+    with open(file, 'w+') as f:
+        f.write(text)
+
+
+# Read from file
+def read(file):
+    with open(file, 'r') as f:
+        return f.read()
+
+
+def initialize_package(args):
+    if args.dryrun:
+        rospy.loginfo("dry-run activated")
+    else:
+        pkg_path = package_path(args.package)
+        folder(os.path.join(pkg_path, 'library'))
+        folder(os.path.join(pkg_path, 'include/{}/nodelets'.format(args.package)))
+        folder(os.path.join(pkg_path, 'src/nodelets'))
+        folder(os.path.join(pkg_path, 'conf/nodelets'))
+
+
+def package_path(name):
+    # get an instance of RosPack with the default search paths
+    rospack = rospkg.RosPack()
+    return  rospack.get_path(name)
+
+def library(args):
+    nodelet_capitalize = args.name.capitalize()
+    pkg_path = package_path(args.package)
+    lib_file = os.path.join(pkg_path, 'library/' + nodelet_capitalize + '.xml')
+    rospy.loginfo('Creating lib %s in %s', args.name, lib_file)
+    template = '<library path="lib/lib{nodelet}_nodelet">\n<class\nname="MarkNodelet/' \
+          '{nodelet_capitalize}"\ntype="rosnodelets::{nodelet_capitalize}"\n' \
+          'base_class_type="nodelet::Nodelet">\n<description>\n{nodelet_capitalize} Nodelet ' \
+          'implementation.\n</description>\n</class>\n</library>'.format(nodelet=args.name,
+                                                                         nodelet_capitalize=nodelet_capitalize)
+    if not args.dryrun:
+        to_file(template, lib_file)
+    else:
+        rospy.loginfo(template)
+
+
+def include(args):
+    rosnodelets_path = package_path('rosnodelets')
+    pkg_path = package_path(args.package)
+    template = read(os.path.join(rosnodelets_path, 'include/rosnodelets/template/Include.txt'))
+    template = template.replace('|NAME_LOWER|', args.name.lower())
+    template = template.replace('|NAME_UPPER|', args.name.upper())
+    template = template.replace('|NAME_CAPITALIZE|', args.name.capitalize())
+    template = template.replace('|DATE|', datetime.datetime.now().strftime("%Y.%m.%d"))
+    include_file = os.path.join(pkg_path, 'include/{}/nodelets/'.format(args.package) + args.name.capitalize()+'.h')
+    rospy.loginfo('Creating include in  %s ', include_file)
+    if not args.dryrun:
+        to_file(template, include_file)
+    else:
+        rospy.loginfo(template)
+
+
+def source(args):
+    rosnodelets_path = package_path('rosnodelets')
+    pkg_path = package_path(args.package)
+    template = read(os.path.join(rosnodelets_path, 'include/rosnodelets/template/Source.txt'))
+    template = template.replace('|PACKAGE|', args.package.lower())
+    template = template.replace('|NAME_CAPITALIZE|', args.name.capitalize())
+    template = template.replace('|DATE|', datetime.datetime.now().strftime("%Y.%m.%d"))
+    source_file = os.path.join(pkg_path, 'src/nodelets/'+args.name.capitalize()+'.cc')
+    rospy.loginfo('Creating source in  %s ', source_file)
+    if not args.dryrun:
+        to_file(template, source_file)
+    else:
+        rospy.loginfo(template)
+
+
+def cmakeLists(args):
+    template = '############################  {nodelet_capitalize}  ############################\n\
+    add_library({nodelet}_nodelet src/nodelets/{nodelet_capitalize}.cc)\n\
+    add_dependencies({nodelet}_nodelet ${{${{PROJECT_NAME}}_EXPORTED_TARGETS}} ${{catkin_EXPORTED_TARGETS}})\n\
+    target_link_libraries({nodelet}_nodelet ${{catkin_LIBRARIES}})\n\
+    #|End Nodelets|'.format(nodelet=args.name, nodelet_capitalize=args.name.capitalize())
+    pkg_path = package_path(args.package)
+    CMake_path = os.path.join(pkg_path, 'CMakeLists.txt')
+    CMake = read(CMake_path)
+    CMake = CMake.replace('#|End Nodelets|', template)
+    rospy.loginfo('Updating CMakeLists.txt')
+    if not args.dryrun:
+        to_file(CMake, CMake_path)
+    else:
+        rospy.loginfo(CMake)
+
+
+def packageXml(args):
+    template = '\t<nodelet plugin="${{prefix}}/library/{nodelet_capitalize}.xml"/>\n</export>'.format(nodelet_capitalize=args.name.capitalize())
+    pkg_path = package_path(args.package)
+    pkgXml_path = os.path.join(pkg_path, 'package.xml')
+    pkgXml = read(pkgXml_path)
+    pkgXml = pkgXml.replace('</export>', template)
+    rospy.loginfo('Updating package.xml')
+    if not args.dryrun:
+        to_file(pkgXml, pkgXml_path)
+    else:
+        rospy.loginfo(template)
+
+
+def launch(args):
+    rosnodelets_path = package_path('rosnodelets')
+    pkg_path = package_path(args.package)
+    template = read(os.path.join(rosnodelets_path, 'conf/nodelets/Template.txt'))
+    template = template.replace('|DATE|', datetime.datetime.now().strftime("%Y.%m.%d"))
+    template = template.replace('|NAME_CAPITALIZE|', args.name.capitalize())
+    launch_path = os.path.join(pkg_path, 'conf/nodelets/'+args.name.capitalize() +'.internal')
+    rospy.loginfo('Creating launchfile in %s ', launch_path)
+    if not args.dryrun:
+        to_file(template, launch_path)
+    else:
+        rospy.loginfo(template)
+
+
+def main():
+    # Description
+    parser = argparse.ArgumentParser(description='Add nodelet to rosnodelets')
+    # Nodelet Name
+    parser.add_argument('-n', '--name', type=str, default=None, help='nodelet name')
+    parser.add_argument('-p', '--package', type=str, default='rosnodelets', help='target package name')
+    parser.add_argument('-d', '--dryrun', action='store_true')
+    # Collect args
+    args = parser.parse_args(rospy.myargv()[1:])
+
+    # Init Ros Node
+    rospy.init_node('add_nodelet')
+
+    # Initialize Package
+    initialize_package(args)
+    # Add to Library
+    library(args)
+    # Add Include
+    include(args)
+    # Add to Source
+    source(args)
+    # Add to CmakeLists
+    cmakeLists(args)
+    # Add to packageXml
+    packageXml(args)
+    # Add internal launchfile
+    launch(args)
+
+main()
